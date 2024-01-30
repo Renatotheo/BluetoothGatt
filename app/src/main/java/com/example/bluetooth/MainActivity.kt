@@ -30,12 +30,14 @@ class MainActivity : AppCompatActivity() {
     private val REQUEST_BLUETOOTH_SCAN_PERMISSION = 3
     private val REQUEST_BLUETOOTH_CONNECT_PERMISSION = 4
     private val REQUEST_FINE_LOCATION_PERMISSION = 1
+    private val REQUEST_BLUETOOTH_ADMIN_PERMISSION = 5
     private val devicesList = mutableListOf<BluetoothDevice>()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
 
         // Solicita permissão para Bluetooth
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED) {
@@ -79,6 +81,8 @@ class MainActivity : AppCompatActivity() {
             deviceListAdapter = DeviceListAdapter(this, devicesList)
             recyclerView.adapter = deviceListAdapter
 
+
+
             val connectButton: Button = findViewById(R.id.connectButton)
             connectButton.setOnClickListener {
                 Log.d("scanCallback", "Botão clicado")
@@ -110,33 +114,60 @@ class MainActivity : AppCompatActivity() {
                 REQUEST_FINE_LOCATION_PERMISSION
             )
         } else {
-            // ...
+
+            //ADIÇÃO NECESSARIA PARA ANDROID 12 OU SUPERIOR
+            /*if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.d("MainActivity", "Permissão BLUETOOTH_SCAN não concedida. Solicitando permissão...")
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.BLUETOOTH_SCAN),
+                    REQUEST_BLUETOOTH_SCAN_PERMISSION
+                )*/
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED) {
+                Log.d("MainActivity", "Permissão BLUETOOTH_ADMIN não concedida. Solicitando permissão...")
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.BLUETOOTH_ADMIN),
+                    REQUEST_BLUETOOTH_ADMIN_PERMISSION
+                )
+            } else {
+
+                // Permissão concedida, inicie a varredura
+                bluetoothAdapter.bluetoothLeScanner.startScan(scanCallback)
+                //startBluetoothScan() // REMOVER ESSA LINHA APÓS TESTES CONCLUIDOS
+            }
         }
-
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.BLUETOOTH_SCAN
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            Log.d("MainActivity", "Permissão BLUETOOTH_SCAN não concedida. Solicitando permissão...")
-
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.BLUETOOTH_SCAN),
-                REQUEST_BLUETOOTH_SCAN_PERMISSION
-            )
-        } else {
-            Log.d("MainActivity", "Permissão BLUETOOTH_SCAN concedida, iniciando varredura...")
-            bluetoothAdapter.bluetoothLeScanner.startScan(scanCallback)
-        }
-
     }
+
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            Log.d("scanCallback", "Dispositivo encontrado")
+            val device = result.device
+            var name = device.name
+            Log.d("scanCallback", "Dispositivo encontrado: ${device.name} (${device.address})")
+
+            // Verifica se o nome do dispositivo é null
+            if (name == null) {
+                // Atribui um valor padrão ao nome
+                name = "Dispositivo desconhecido"
+            }
+
+            // Adiciona o dispositivo à lista
+            devicesList.add(device)
+
+            // Notifica o adaptador da atualização da lista
+            deviceListAdapter.addDevice(device)
+
+
+            val appContext = applicationContext
+
             if (ActivityCompat.checkSelfPermission(
-                    this@MainActivity,
+                    appContext,
                     Manifest.permission.BLUETOOTH_CONNECT
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
@@ -151,8 +182,15 @@ class MainActivity : AppCompatActivity() {
                 val device = result.device
                 Log.d("MainActivity", "Found device: ${device.name} (${device.address})")
 
-                // Verifique se a lista de dispositivos não está vazia
-                if (devicesList.isNotEmpty()) {
+                // Verifique se a lista de dispositivos não está vazia********************
+                /*if (devicesList.isNotEmpty()) {
+                    deviceListAdapter.addDevice(device)
+                }*/
+                /*// Adicione o dispositivo à lista e atualize o adaptador
+                deviceListAdapter.addDevice(device)*/
+
+                // Adicione o dispositivo à lista e atualize o adaptador
+                runOnUiThread {
                     deviceListAdapter.addDevice(device)
                 }
             }
