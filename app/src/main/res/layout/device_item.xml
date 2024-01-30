@@ -3,20 +3,34 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="8dp"
+    android:layout_gravity="center">
+
+    <TextView
+        android:id="@+id/fixedDeviceName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dispositivo Fixo"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/holo_purple"/>
 
     <TextView
         android:id="@+id/deviceName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Nome"
         android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textStyle="bold"
+        android:textColor="@android:color/holo_purple"/>
 
     <TextView
         android:id="@+id/deviceAddress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="Endereço"
         android:textSize="14sp"
-        android:textStyle="italic" />
+        android:textStyle="italic"
+        android:textColor="@android:color/holo_purple"/>
 
 </LinearLayout>
