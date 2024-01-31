@@ -32,14 +32,19 @@ class MainActivity : AppCompatActivity() {
     private val REQUEST_FINE_LOCATION_PERMISSION = 1
     private val REQUEST_BLUETOOTH_ADMIN_PERMISSION = 5
     private val devicesList = mutableListOf<BluetoothDeviceModel>()
-    private val SCAN_TIMEOUT_MILLIS: Long = 15000 // 15 segundos
+    private val SCAN_TIMEOUT_MILLIS: Long = 5000 // 15 segundos
     private var isScanning = false
     private val handler = Handler()
+    private lateinit var bluetoothManager: BluetoothManager
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         Log.d("MainActivity", "onCreate() chamado")
+        initBluetoothAdapter()
+        bluetoothManager = BluetoothManager(this,bluetoothAdapter)
+
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADMIN)
             != PackageManager.PERMISSION_GRANTED) {
@@ -53,6 +58,7 @@ class MainActivity : AppCompatActivity() {
             initRecyclerView()
             Log.d("MainActivity", "Permissão BLUETOOTH já concedida")
         }
+
 
         // Adiciona um temporizador para aguardar a inicialização do adaptador de layout
         Handler().postDelayed({
@@ -68,6 +74,34 @@ class MainActivity : AppCompatActivity() {
         }, 1000)
     }
 
+
+
+    private fun initBluetoothAdapter() {
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        Log.d("MainActivity", "BluetoothAdapter: $bluetoothAdapter")
+
+        if (!bluetoothAdapter.isEnabled) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_ADMIN
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+            } else {
+                // Se a permissão BLUETOOTH_ADMIN não for concedida, solicite a permissão
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.BLUETOOTH_ADMIN),
+                    REQUEST_BLUETOOTH_ADMIN_PERMISSION
+                )
+            }
+        } else {
+            Log.d("MainActivity", "Bluetooth já está ativado")
+            initRecyclerView()
+        }
+    }
+
     private fun initRecyclerView() {
         Log.d("MainActivity", "initRecyclerView()")
         recyclerView = findViewById(R.id.recyclerView)
@@ -76,7 +110,10 @@ class MainActivity : AppCompatActivity() {
             == PackageManager.PERMISSION_GRANTED) {
             Log.d("MainActivity", "Permissão BLUETOOTH concedida")
             recyclerView.layoutManager = LinearLayoutManager(this)
-            deviceListAdapter = DeviceListAdapter(this)
+            deviceListAdapter = DeviceListAdapter(this){ selectedDevice ->
+                Log.d("MainActivity", "Dispositivo selecionado: $selectedDevice")
+                connectToDevice(selectedDevice)
+            }
             recyclerView.adapter = deviceListAdapter
 
             val connectButton: Button = findViewById(R.id.connectButton)
@@ -91,8 +128,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun connectToDevice(device: BluetoothDeviceModel) {
+        Log.d("MainActivity", "connectToDevice chamado com dispositivo: $device")
+        // Verifica se a permissão BLUETOOTH_CONNECT está concedida
+        // Inicia a conexão GATT
+        bluetoothManager.connectToDevice(device)
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Inicia a conexão GATT
+            //bluetoothManager.connectToDevice(device)
+        } else {
+            // Permissão não concedida, solicitar a permissão
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                REQUEST_BLUETOOTH_CONNECT_PERMISSION
+            )
+        }
+    }
+
     private fun startBluetoothScan() {
         Log.d("MainActivity", "Iniciando varredura Bluetooth")
+
+        //TRATAR AMANHA A LIMPEZA DA LISTA
+        //deviceListAdapter.clearDevices()
+
+       /* runOnUiThread {
+            deviceListAdapter.clearDevices()
+        }*/
+        Log.d("MainActivity", "Lista de dispositivos limpa antes da varredura")
 
         // Adicione um log para verificar se a permissão ACCESS_FINE_LOCATION foi concedida
         Log.d("MainActivity", "Permissão ACCESS_FINE_LOCATION concedida: " +

@@ -11,13 +11,19 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import android.Manifest
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
 
-class DeviceListAdapter(private val context: Context) :
+class DeviceListAdapter(
+    private val context: Context,
+    private val onItemClick: (BluetoothDeviceModel) -> Unit) :
     RecyclerView.Adapter<DeviceListAdapter.ViewHolder>() {
 
     private val devicesList = mutableListOf<BluetoothDeviceModel>()
+    //TRATAR AMANHA A LIMPEZA DA LISTA
+    private val devices = mutableListOf<BluetoothDeviceModel>()
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val deviceName: TextView = itemView.findViewById(R.id.deviceName)
@@ -32,6 +38,20 @@ class DeviceListAdapter(private val context: Context) :
         return ViewHolder(view)
     }
 
+    //TRATAR AMANHA A LIMPEZA DA LISTA
+    /*fun clearDevices() {
+        Log.d("DeviceListAdapter", "Limpando lista de dispositivos")
+        val size = devices.size
+        devices.clear()
+
+        val handler = Handler(Looper.getMainLooper())
+
+        // Notifica o adaptador sobre a remoção dos itens
+        handler.post {
+            notifyItemRangeRemoved(0, size)
+        }
+        Log.d("DeviceListAdapter", "Lista de dispositivos limpa")
+    }*/
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val device = devicesList[position]
         Log.d("DeviceListAdapter", "onBindViewHolder chamado para posição: $position")
@@ -39,7 +59,12 @@ class DeviceListAdapter(private val context: Context) :
         holder.deviceName.text = device.name ?: "Unknown Device"
         holder.deviceAddress.text = device.address
         Log.d("DeviceListAdapter", "ViewHolder - Nome: ${device.name}, Endereço: ${device.address}")
+
+        holder.itemView.setOnClickListener {
+            onItemClick.invoke(device)
+        }
     }
+
 
     override fun getItemCount(): Int {
         Log.d("DeviceListAdapter", "getItemCount chamado")
